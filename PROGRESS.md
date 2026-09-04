@@ -1,11 +1,13 @@
 # PROGRESS.md — BAYPEDIA Hub Fullstack Music Portal
 
-**Last Updated:** 2026-09-03 23:58 WIB  
-**Project Status:** ✅ **COMPLETED - READY FOR DEPLOYMENT**  
-**Version:** 3.0.1
+**Last Updated:** 2026-09-04 00:10 WIB  
+**Project Status:** ✅ **COMPLETED - READY FOR DEPLOYMENT**
+**Deployment Target:** Frontend Vercel + Backend Railway (Render ditinggalkan karena butuh card)  
+**Version:** 3.0.2
 
 **Branding:** BAYPEDIA (updated from SoundStory)
 **Latest Build:** `npm run build:frontend` sukses pada 2026-09-03 (dist terbaru dihasilkan)
+**Git Status:** repo sudah di-init, commit pertama berhasil, siap push ke GitHub
 
 ---
 
@@ -44,7 +46,9 @@
 ├── .env.example                 # Template environment variables
 ├── README.md                    # Project documentation
 ├── PROGRESS.md                  # File tracking progress ini
-└── deploy.sh                    # Script bantu deploy Vercel/Railway
+├── deploy.sh                    # Script bantu deploy Vercel/Railway
+├── render.yaml                  # Blueprint frontend static + backend API di Render
+├── vercel.json                  # Config build/deploy Vite di Vercel
 ```
 
 ### **Frontend Structure (`src/`):**

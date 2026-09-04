@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: baypedia-api
+    runtime: node
+    plan: free
+    rootDir: .
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 4000
+
+  - type: static
+    name: baypedia-web
+    rootDir: .
+    buildCommand: npm install && npm run build:frontend
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE
+        value: https://baypedia-api.onrender.com/api
