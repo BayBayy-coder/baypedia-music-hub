@@ -6,22 +6,24 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f6f1ea',
-          100: '#ece3d6',
-          500: '#c4a574',
-          600: '#a8895c',
-          700: '#8a6e48',
-          900: '#2a241c',
-          accent: '#c4a574',
-          gold: '#c4a574',
+          50: '#f5f8f3',
+          100: '#e6ede0',
+          300: '#c5dcb6',
+          500: '#8aa38b',
+          600: '#6d876e',
+          700: '#556d56',
+          800: '#425742',
+          900: '#2a3d2a',
+          accent: '#8aa38b',
+          gold: '#d4b5a0',
           emerald: '#8aa38b'
         },
         dark: {
-          bg: '#0c0b0a',
-          surface: '#141312',
-          card: '#1b1a18',
-          border: '#2a2926',
-          hover: '#22211e'
+          bg: '#0a0a0b',
+          surface: '#121213',
+          card: '#18181a',
+          border: '#262628',
+          hover: '#202022'
         }
       },
       fontFamily: {
