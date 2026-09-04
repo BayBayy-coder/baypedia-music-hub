@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle, Disc, MapPin, Link2, Sparkles, Music2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Send, CheckCircle, Link2, Sparkles, MapPin, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const SubmitReleaseForm = () => {
-  const { addBandRelease, apiKey } = useApp();
+  const { API_BASE, user, addBandRelease } = useApp();
   const [formData, setFormData] = useState({
     bandName: '',
     origin: '',
@@ -17,35 +17,56 @@ export const SubmitReleaseForm = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [lastSubmission, setLastSubmission] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.bandName || !formData.title) return;
+    setLoading(true);
+    setError('');
 
-    const newRel = addBandRelease({
-      ...formData,
-      cover: formData.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80'
-    });
+    try {
+      const token = localStorage.getItem('baypedia_token');
+      const res = await fetch(`${API_BASE}/releases`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          ...formData,
+          cover: formData.cover || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal submit rilisan');
 
-    setLastSubmission(newRel);
-    setSubmitted(true);
-    setFormData({
-      bandName: '',
-      origin: '',
-      title: '',
-      type: 'Single',
-      genre: 'Indie Pop',
-      spotifyUrl: '',
-      youtubeUrl: '',
-      description: '',
-      cover: ''
-    });
+      const local = addBandRelease(data);
+      setLastSubmission(local || data);
+      setSubmitted(true);
+      setFormData({
+        bandName: '',
+        origin: '',
+        title: '',
+        type: 'Single',
+        genre: 'Indie Pop',
+        spotifyUrl: '',
+        youtubeUrl: '',
+        description: '',
+        cover: ''
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div id="submit-release" className="bg-dark-surface border border-dark-border rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden">
       <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
-      
+
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-500/15 text-brand-500 rounded-full text-xs font-bold uppercase tracking-wider mb-3">
@@ -71,7 +92,7 @@ export const SubmitReleaseForm = () => {
             <div className="inline-block bg-dark-bg p-4 rounded-xl border border-dark-border text-xs font-mono text-left space-y-1">
               <div><span className="text-gray-400">ID Tracking:</span> {lastSubmission?.id}</div>
               <div><span className="text-gray-400">Status:</span> <span className="text-brand-gold font-bold">{lastSubmission?.status}</span></div>
-              <div><span className="text-gray-400">System Key:</span> {apiKey}</div>
+              <div><span className="text-gray-400">Login:</span> {user ? user.email : 'Guest submit'}</div>
             </div>
             <div>
               <button
@@ -86,9 +107,7 @@ export const SubmitReleaseForm = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Nama Band / Artist *
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Nama Band / Artist *</label>
                 <input
                   type="text"
                   required
@@ -100,9 +119,7 @@ export const SubmitReleaseForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Asal Kota
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Asal Kota</label>
                 <div className="relative">
                   <MapPin size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                   <input
@@ -118,9 +135,7 @@ export const SubmitReleaseForm = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Judul Lagu / EP / Album *
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Judul Lagu / EP / Album *</label>
                 <input
                   type="text"
                   required
@@ -132,9 +147,7 @@ export const SubmitReleaseForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Tipe Rilisan
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Tipe Rilisan</label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -148,9 +161,7 @@ export const SubmitReleaseForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Genre Utama
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Genre Utama</label>
                 <input
                   type="text"
                   placeholder="Misal: Emo Pop, Post-Rock..."
@@ -163,9 +174,7 @@ export const SubmitReleaseForm = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Link Stream Spotify / Apple Music
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Link Stream Spotify / Apple Music</label>
                 <div className="relative">
                   <Link2 size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                   <input
@@ -179,9 +188,7 @@ export const SubmitReleaseForm = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                  Link YouTube / Lyric Video
-                </label>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Link YouTube / Lyric Video</label>
                 <div className="relative">
                   <Link2 size={16} className="absolute left-3.5 top-3.5 text-gray-400" />
                   <input
@@ -196,9 +203,7 @@ export const SubmitReleaseForm = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
-                Press Release / Cerita di Balik Lagu
-              </label>
+              <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Press Release / Cerita di Balik Lagu</label>
               <textarea
                 rows={4}
                 placeholder="Ceritakan kisah pembuatan lagu, makna lirik, atau pesan yang ingin disampaikan..."
@@ -208,18 +213,21 @@ export const SubmitReleaseForm = () => {
               />
             </div>
 
+            {error && <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">{error}</div>}
+
             <div className="flex items-center justify-between pt-4 border-t border-dark-border">
               <div className="flex items-center space-x-2 text-xs text-gray-400 font-mono">
                 <ShieldCheck size={16} className="text-brand-emerald" />
-                <span>Verified Gateway Active ({apiKey})</span>
+                <span>Verified Gateway Active</span>
               </div>
 
               <button
                 type="submit"
-                className="bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-95 text-white font-bold text-sm uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-xl shadow-brand-500/20 transition-all flex items-center space-x-2"
+                disabled={loading}
+                className="bg-gradient-to-r from-brand-600 to-brand-accent hover:opacity-95 disabled:opacity-60 text-white font-bold text-sm uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-xl shadow-brand-500/20 transition-all flex items-center space-x-2"
               >
                 <Send size={16} />
-                <span>Kirim Ke Editorial Radar</span>
+                <span>{loading ? 'Mengirim...' : 'Kirim Ke Editorial Radar'}</span>
               </button>
             </div>
           </form>

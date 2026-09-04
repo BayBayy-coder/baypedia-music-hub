@@ -1,19 +1,27 @@
 import React from 'react';
-import { Flame, Play, Clock, Sparkles, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Flame, TrendingUp, ArrowRight, Search } from 'lucide-react';
 import { FEATURED_ARTICLES, SUBMITTED_RELEASES, INDIE_RADAR_CHARTS } from '../data/mockData';
 import { useApp } from '../context/AppContext';
 import { SubmitReleaseForm } from '../components/SubmitReleaseForm';
 
 export const HomeFeed = () => {
+  const navigate = useNavigate();
   const { submittedBands, setActiveTab } = useApp();
+  const [query, setQuery] = React.useState('');
   const heroArticle = FEATURED_ARTICLES[0];
-  const sideArticles = FEATURED_ARTICLES.slice(1);
+  const sideArticles = FEATURED_ARTICLES.slice(1).filter(a => `${a.title} ${a.category}`.toLowerCase().includes(query.toLowerCase()));
   const allReleases = [...submittedBands, ...SUBMITTED_RELEASES];
+  const filteredReleases = allReleases.filter(r => `${r.title} ${r.bandName} ${r.genre} ${r.origin}`.toLowerCase().includes(query.toLowerCase()));
+  const filteredCharts = INDIE_RADAR_CHARTS.filter(i => `${i.track} ${i.band}`.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <div className="space-y-12 py-8">
-      {/* Hero */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 flex items-center gap-3 bg-dark-card border border-dark-border rounded-2xl px-4 py-3">
+          <Search size={16} className="text-gray-400" />
+          <input value={query} onChange={e => setQuery(e.target.value)} className="w-full bg-transparent outline-none text-sm text-white placeholder:text-gray-500" placeholder="Cari artikel, rilisan, atau band..." />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <div className="lg:col-span-8 bg-dark-card border border-dark-border rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full blur-3xl pointer-events-none transition-all group-hover:bg-brand-500/10" />
@@ -32,7 +40,7 @@ export const HomeFeed = () => {
                   <div className="text-xs text-gray-400 font-mono">Senior Music Editor</div>
                 </div>
               </div>
-              <button onClick={() => setActiveTab('articles')} className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
+              <button onClick={() => navigate(`/article/${heroArticle.id}`)} className="bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2">
                 <span>Baca Artikel</span><ArrowRight size={14} />
               </button>
             </div>
@@ -43,7 +51,7 @@ export const HomeFeed = () => {
               <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2"><TrendingUp size={16} className="text-brand-500" /> Trending</h3>
             </div>
             {sideArticles.map((art) => (
-              <div key={art.id} onClick={() => setActiveTab('articles')} className="bg-dark-surface hover:bg-dark-card border border-dark-border rounded-xl p-4 cursor-pointer transition-all">
+              <div key={art.id} onClick={() => navigate(`/article/${art.id}`)} className="bg-dark-surface hover:bg-dark-card border border-dark-border rounded-xl p-4 cursor-pointer transition-all">
                 <span className="text-[10px] font-bold text-brand-500 uppercase">{art.category}</span>
                 <h4 className="text-sm font-semibold text-white mt-2">{art.title}</h4>
                 <div className="flex items-center gap-2 mt-3 text-xs text-gray-400 font-mono">
@@ -55,7 +63,6 @@ export const HomeFeed = () => {
         </div>
       </section>
 
-      {/* Band Radar */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between mb-6 pb-3 border-b border-dark-border">
           <div>
@@ -67,7 +74,7 @@ export const HomeFeed = () => {
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {allReleases.map((rel) => (
+          {filteredReleases.map((rel) => (
             <div key={rel.id} className="bg-dark-card border border-dark-border hover:border-brand-500/40 rounded-2xl p-5 transition-all hover:-translate-y-1 flex flex-col">
               <div className="relative aspect-video rounded-xl overflow-hidden mb-4 bg-dark-surface">
                 <img src={rel.cover} alt={rel.title} className="w-full h-full object-cover" />
@@ -92,14 +99,13 @@ export const HomeFeed = () => {
         </div>
       </section>
 
-      {/* Indie Chart */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-dark-surface border border-dark-border rounded-3xl p-6 sm:p-10 shadow-lg">
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-dark-border">
             <div><span className="text-xs font-bold text-brand-500 uppercase tracking-widest font-mono">Chart Realtime</span><h2 className="text-xl sm:text-2xl font-extrabold text-white mt-1">Indie Weekly Top 8</h2></div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {INDIE_RADAR_CHARTS.map((item) => (
+            {filteredCharts.map((item) => (
               <div key={item.rank} className="bg-dark-card hover:bg-dark-hover border border-dark-border rounded-xl p-3 flex items-center justify-between transition-all">
                 <div className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-lg flex items-center justify-center font-extrabold text-xs ${item.rank <= 3 ? 'bg-brand-500 text-white' : 'bg-dark-bg text-gray-400'}`}>#{item.rank}</span>
