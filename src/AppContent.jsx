@@ -15,6 +15,8 @@ export const AppContent = () => {
   const { activeTab, setActiveTab, theme, user, setUser } = useApp();
   const [authMode, setAuthMode] = React.useState('login');
   const isAdmin = user?.role === 'admin';
+  const isEditor = user?.role === 'editor';
+  const canManageContent = isAdmin || isEditor;
 
   React.useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
@@ -30,7 +32,7 @@ export const AppContent = () => {
       case 'auth':
         return <AuthPage mode={authMode} onSuccess={(u) => { setUser(u); setActiveTab('home'); }} />;
       case 'admin':
-        return isAdmin ? <AdminDashboard /> : (
+        return canManageContent ? <AdminDashboard /> : (
           <div className="max-w-3xl mx-auto px-4 py-20 text-center">
             <ShieldCheck size={56} className="mx-auto text-brand-gold" />
             <h1 className="text-3xl font-extrabold text-white mt-5">Akses Admin Diperlukan</h1>

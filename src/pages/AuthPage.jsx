@@ -36,7 +36,7 @@ export const AuthPage = ({ mode = 'login', onSuccess }) => {
         <div className="text-center mb-7">
           <div className="w-12 h-12 mx-auto rounded-2xl bg-brand-500/20 text-brand-500 flex items-center justify-center mb-4"><LockKeyhole size={22}/></div>
           <h1 className="text-2xl font-extrabold text-white">{isLogin ? 'Masuk ke baypedia' : 'Daftar Akun Baru'}</h1>
-          <p className="text-xs text-gray-400 mt-2">{isLogin ? 'Komentari artikel dan pantau submit rilisanmu.' : 'Bergabung dengan komunitas pecinta musik.'}</p>
+          <p className="text-xs text-gray-400 mt-2">{isLogin ? 'Login admin: admin@baypedia.id / Admin123! · editor: editor@baypedia.id / Editor123!' : 'Bergabung dengan komunitas pecinta musik.'}</p>
         </div>
         {message && <div className="mb-4 bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl p-3 text-xs">{message}</div>}
         <form onSubmit={submit} className="space-y-4">

@@ -20,6 +20,7 @@ const seedArticles = [
     author: 'Raka Pratama',
     excerpt: 'Bagaimana penyanyi muda asal Surabaya ini berhasil menguraikan rasa kehilangan menjadi soundtrack kolektif anak muda Indonesia.',
     body: 'Bernadya berhasil mengubah rasa personal menjadi bahasa yang terasa universal. Lagu ini bergerak pelan, jujur, dan tidak berusaha besar-besaran; justru di situlah daya pukulnya. Dengan produksi yang bersih dan lirik yang rapat, Satu Bulan jadi salah satu momen penting pop Indonesia tahun ini.',
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1400&q=80',
     featured: true,
     tags: ['Bernadya', 'Pop Indie', 'Viral']
   },
@@ -121,6 +122,7 @@ const initDB = async () => {
         author TEXT NOT NULL,
         excerpt TEXT NOT NULL,
         body TEXT NOT NULL DEFAULT '',
+        image TEXT,
         tags JSONB DEFAULT '[]'::jsonb,
         status TEXT DEFAULT 'published',
         featured BOOLEAN DEFAULT false,
@@ -128,6 +130,7 @@ const initDB = async () => {
       )
     `);
     await client.query(`ALTER TABLE articles ADD COLUMN IF NOT EXISTS body TEXT NOT NULL DEFAULT ''`);
+    await client.query(`ALTER TABLE articles ADD COLUMN IF NOT EXISTS image TEXT`);
     await client.query(`ALTER TABLE articles ADD COLUMN IF NOT EXISTS tags JSONB DEFAULT '[]'::jsonb`);
     await client.query(`ALTER TABLE articles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'published'`);
     await client.query(`ALTER TABLE articles ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT false`);
@@ -175,28 +178,35 @@ const initDB = async () => {
       )
     `);
 
-    const { rows: adminRows } = await client.query('SELECT id FROM users WHERE email = $1', ['admin@baypedia.id']);
-    if (adminRows.length === 0) {
-      await client.query(
-        'INSERT INTO users (id, name, email, passwordHash, role) VALUES ($1, $2, $3, $4, $5)',
-        ['admin-1', 'Admin baypedia', 'admin@baypedia.id', bcrypt.hashSync('Admin123!', 10), 'admin']
-      );
+    const accounts = [
+      ['admin-1', 'Admin baypedia', 'admin@baypedia.id', 'Admin123!', 'admin'],
+      ['editor-1', 'Editor baypedia', 'editor@baypedia.id', 'Editor123!', 'editor']
+    ];
+    for (const [id, name, email, password, role] of accounts) {
+      const { rows: existing } = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+      if (existing.length === 0) {
+        await client.query(
+          'INSERT INTO users (id, name, email, passwordHash, role) VALUES ($1, $2, $3, $4, $5)',
+          [id, name, email, bcrypt.hashSync(password, 10), role]
+        );
+      }
     }
 
     for (const article of seedArticles) {
       await client.query(
-        `INSERT INTO articles (id, title, category, author, excerpt, body, tags, status, featured)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+        `INSERT INTO articles (id, title, category, author, excerpt, body, image, tags, status, featured)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10)
          ON CONFLICT (id) DO UPDATE SET
            title = EXCLUDED.title,
            category = EXCLUDED.category,
            author = EXCLUDED.author,
            excerpt = EXCLUDED.excerpt,
            body = EXCLUDED.body,
+           image = EXCLUDED.image,
            tags = EXCLUDED.tags,
            status = EXCLUDED.status,
            featured = EXCLUDED.featured`,
-        [article.id, article.title, article.category, article.author, article.excerpt, article.body, JSON.stringify(article.tags), 'published', article.featured]
+        [article.id, article.title, article.category, article.author, article.excerpt, article.body, article.image, JSON.stringify(article.tags), 'published', article.featured]
       );
     }
 
@@ -326,16 +336,30 @@ app.get('/api/articles/:id', async (req, res) => {
   res.json(rows[0]);
 });
 
-app.post('/api/articles', auth(['admin']), async (req, res) => {
-  const { title, category, author, excerpt, body, tags, featured } = req.body;
+app.post('/api/articles', auth(['admin', 'editor']), async (req, res) => {
+  const { title, category, author, excerpt, body, tags, featured, image } = req.body;
   const id = crypto.randomUUID();
   const resolvedBody = body || excerpt || '';
   const resolvedTags = Array.isArray(tags) ? tags : String(tags || '').split(',').map(s => s.trim()).filter(Boolean);
+  const resolvedImage = image || 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1400&q=80';
   const { rows } = await pool.query(
-    'INSERT INTO articles (id, title, category, author, excerpt, body, tags, featured, status) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9) RETURNING *',
-    [id, title, category, author, excerpt, resolvedBody, JSON.stringify(resolvedTags), Boolean(featured), 'published']
+    'INSERT INTO articles (id, title, category, author, excerpt, body, tags, featured, status, image) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10) RETURNING *',
+    [id, title, category, author, excerpt, resolvedBody, JSON.stringify(resolvedTags), Boolean(featured), 'published', resolvedImage]
   );
   res.json(rows[0]);
+});
+
+app.get('/api/admin/database', auth(['admin']), async (_req, res) => {
+  const tables = ['users', 'articles', 'comments', 'releases', 'announcements'];
+  const summary = {};
+  for (const table of tables) {
+    const { rows } = await pool.query(`SELECT COUNT(*)::int AS count FROM ${table}`);
+    summary[table] = rows[0].count;
+  }
+  const { rows: userRows } = await pool.query('SELECT id, name, email, role, createdat AS "createdAt" FROM users ORDER BY createdat DESC LIMIT 10');
+  const { rows: articleRows } = await pool.query('SELECT id, title, category, author, featured, status, createdat AS "createdAt" FROM articles ORDER BY createdat DESC LIMIT 10');
+  const { rows: releaseRows } = await pool.query('SELECT id, bandname AS "bandName", title, status, createdat AS "createdAt" FROM releases ORDER BY createdat DESC LIMIT 10');
+  res.json({ summary, users: userRows, articles: articleRows, releases: releaseRows });
 });
 
 app.get('/api/comments/article/:articleId', async (req, res) => {

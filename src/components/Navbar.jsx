@@ -107,12 +107,12 @@ export const Navbar = () => {
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Account</p>
                       <p className="text-sm font-semibold text-white truncate">{user.email}</p>
                     </div>
-                    {user.role === 'admin' && (
+                    {(user.role === 'admin' || user.role === 'editor') && (
                       <button 
                         onClick={() => { setActiveTab('admin'); setIsProfileOpen(false); }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-brand-500/10 hover:text-brand-500 transition-all"
                       >
-                        <LayoutDashboard size={18} /> Admin Dashboard
+                        <LayoutDashboard size={18} /> Dashboard Konten
                       </button>
                     )}
                     <button 
